@@ -15,6 +15,7 @@ export async function get(server, protocol, data, filter) {
   let url = protocol + server + data + "?filter=" + JSON.stringify(filter);
   const res = await axios.get(url);
   console.log(res.data);
+
   return "allo";
 }
 

@@ -1,5 +1,5 @@
 import { StackScreenProps } from "@react-navigation/stack";
-import { Body, Button, Container, Content, Header, Left, Right, Text } from "native-base";
+import { Body, Button, Container, Content, Header, Left, Right, Text, Icon } from "native-base";
 import * as React from "react";
 import { Alert, Image, ImageBackground, ImageSourcePropType, ScrollView, StyleSheet, View, Platform, StatusBar } from "react-native";
 import MagnusTitle from "../components/MagnusTitle";
@@ -16,12 +16,20 @@ import store from '../redux/store';
 import { get } from '../utils/toadConnectorFileMaker';
 
 import tz from "moment-timezone";
+import { setTweetMovie, setTweetMusic, setViewMode } from "../redux/reducer";
 
 
 const WelcomeScreen = ({ navigation }: Props) => {
 
     const AppScreen = () => {
-        const itemId = useSelector(state => state.itemId);
+        const viewMode = useSelector(state => state.viewMode);
+        const tweetMusic = useSelector(state => state.tweetMusic);
+        const tweetMovie = useSelector(state => state.tweetMovie);
+        const tweetOriginalMusic = useSelector(state => state.tweetOriginalMusic);
+        const tweetOriginalMovie = useSelector(state => state.tweetOriginalMovie);
+
+        const dispatch = useDispatch();
+
 
         return (
             <View>
@@ -29,6 +37,27 @@ const WelcomeScreen = ({ navigation }: Props) => {
                 <StatusBar
                     barStyle="light-content" translucent={true}
                 />
+
+                <Header
+                    noShadow={true}
+                    style={{
+                        borderBottomWidth: 0, backgroundColor: '#26a8ed',
+                    }}
+                ><Left></Left>
+                    <Body style={{ flex: 1.75 }}><Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>{"Tweets"}</Text>
+                    </Body>
+                    <Right>
+                        {tweetOriginalMusic.length != tweetMusic.length || tweetOriginalMovie.length != tweetMovie.length ? <TouchableOpacity onPress={() => {
+                            dispatch(setTweetMovie(tweetOriginalMovie));
+                            dispatch(setTweetMusic(tweetOriginalMusic));
+                        }
+                        }><Icon type="MaterialIcons" name="refresh" style={{ color: 'white', fontWeight: 'bold', fontSize: 32 }} /></TouchableOpacity>
+                            : null}
+
+                    </Right>
+                </Header>
+
+
                 <View
                     style={styles.imgBackground}
                 >
@@ -39,117 +68,81 @@ const WelcomeScreen = ({ navigation }: Props) => {
 
                             <Text style={{ color: '#26a8ed', fontWeight: 'bold', fontSize: 24 }}>
                                 <Text style={{ color: 'black', fontSize: 24 }}>
-                                    Planet
+                                    Latest
                                 </Text>
-                                Rate
+                                Tweets of {viewMode}
                             </Text>
                         </View>
 
-                        <View style={{ marginLeft: 50, marginRight: 50, height: 150 }}>
-
-
-                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 50 }}>
-                                <Text style={{ fontSize: 32, color: '#0f4c6c', textAlign: 'center' }}>Trusted reviews.{"\n"}
-                                    Smart decisions.</Text>
+                        {viewMode == "Movie Star" ? tweetMovie.map((value) => (
+                            <View style={{ marginTop: 15, marginLeft: 15 }}>
+                                <View style={{ flexDirection: 'row' }}>
+                                    <Text style={{ fontWeight: 'bold' }}>{value.author}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            let tweetTemp = [];
+                                            let tweetIndex = 0;
+                                            for (let i = 0; i < tweetMovie.length; i++) {
+                                                if (tweetMovie[i].id != value.id) {
+                                                    tweetTemp[tweetIndex] = tweetMovie[i];
+                                                    tweetIndex++;
+                                                }
+                                            }
+                                            dispatch(setTweetMovie(tweetTemp));
+                                        }}
+                                    >
+                                        <Icon name="cancel" type="MaterialIcons" style={{ color: "#26a8ed", fontSize: 20, marginLeft: 10 }} />
+                                    </TouchableOpacity>
+                                </View>
+                                <Text>{value.tweet}</Text>
 
                             </View>
-                        </View>
+                        )) : null}
 
+                        {viewMode == "Music Star" ? tweetMusic.map((value) => (
+                            <View style={{ marginTop: 15, marginLeft: 15 }}>
+                                <View style={{ flexDirection: 'row' }}>
+                                    <Text style={{ fontWeight: 'bold' }}>{value.author}</Text>
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            let tweetTemp = [];
+                                            let tweetIndex = 0;
+                                            for (let i = 0; i < tweetMusic.length; i++) {
+                                                if (tweetMusic[i].id != value.id) {
+                                                    tweetTemp[tweetIndex] = tweetMusic[i];
+                                                    tweetIndex++;
+                                                }
+                                            }
+                                            dispatch(setTweetMusic(tweetTemp));
+                                        }}
+                                    >
+                                        <Icon name="cancel" type="MaterialIcons" style={{ color: "#26a8ed", fontSize: 20, marginLeft: 10 }} />
+                                    </TouchableOpacity>
+                                </View>
+                                <Text>{value.tweet}</Text>
 
-                        <ChampDeTexte label={'Item #'} labelEn={'Item #'} value={itemId} error={false} />
+                            </View>
+                        )) : null}
 
-
-                    </View>
-
-                    <View style={{
-                        flex: 1,
-                        justifyContent: 'flex-end',
-                        maxHeight: 25,
-
-                    }}>
 
 
                         <TouchableOpacity
                             onPress={async () => {
-                                let filter = {};
-                                filter.where = {};
-                                filter.where.itemId = itemId;
+                                if (viewMode == 'Movie Star') {
+                                    dispatch(setViewMode('Music Star'));
+                                } else if (viewMode == 'Music Star') {
+                                    dispatch(setViewMode('Movie Star'));
+                                }
 
-                                await get(global.Host, global.Protocol, global.Ratings, filter);
                             }}
-                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#26a8ed', height: 65 }}>
-                            <Text style={{ fontWeight: 'bold', color: 'white' }}>{itemId.length == 0 ? "View Ratings" : "View Ratings of " + itemId}</Text>
+                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#26a8ed', height: 55, marginBottom: 'auto', marginTop: 50 }}>
+                            <Text style={{ fontWeight: 'bold', color: 'white' }}>{viewMode == 'Movie Star' ? "View tweets music star" : viewMode == "Music Star" ? "View tweets movie star" : null}</Text>
                         </TouchableOpacity>
-                    </View>
-                    {/* <View style={{ height: 80, marginTop: -50, justifyContent: 'flex-end' }}>
-                    <View style={{ position: 'absolute', height: 80, justifyContent: 'flex-end', width: '100%' }}>
-                        <LinearGradient
-                            style={{ height: 50, width: '100%' }}
-                            colors={["transparent", 'black']}
-                        ></LinearGradient>
-                        <View style={{ backgroundColor: 'black', width: '100%', height: 30, alignItems: 'center', justifyContent: 'center' }}></View>
+
 
                     </View>
-                    <Text style={{ color: 'white', alignSelf: 'center', fontSize: 22, textAlign: 'center', paddingBottom: 10 }}>{"D'une vie à l'autre\ndepuis 1923"}</Text>
-
-                </View>
-
-                <Image source={require("../assets/images/logo1024.png")} style={[{ height: 40, width: 40, marginLeft: 10, marginTop: 30, position: 'absolute' },]}></Image>
-
-                <ScrollView style={{ flex: 1, padding: 20, flexGrow: 1, borderTopColor: '#94AF2E', borderTopWidth: 4 }} >
 
 
-
-
-                    <StyledButton
-                        onPress={() => {
-                            navigation.navigate("Complexes");
-                        }}
-                        text={'Voir nos complexes'}
-                        source={require('../assets/images/accueil/complexes.jpg')}
-                    />
-                    <StyledButton
-                        onPress={() => {
-                            navigation.navigate("Services");
-                        }}
-                        text={'Voir nos services'}
-                        source={require('../assets/images/accueil/services.jpg')}
-                    /> */}
-
-
-                    {
-                    /**
-                    <StyledButton 
-                                onPress={() => {
-                                    navigation.navigate('CimetiereLaval');
-                                }}
-                                text={'Cimetière Laval'}
-                                source={require('../assets/images/cimetiere-laval.png')}
-                    />
-                    <StyledButton
-                                onPress={() => {
-                                    navigation.navigate('LesSentiers');
-                                }}
-                                text={'Cimetière Laval'}
-                                source={require('../assets/images/lessentiers.png')}
-                    />
-                     */}
-                    {/* </ScrollView>
-
-                <View style={[styles.subContainer, { justifyContent: "flex-end", height: 80, paddingLeft: 20, paddingRight: 20 }]}>
-                    <Button
-                        onPress={() => {
-                            if (SyncStorage.get('authUser')) {
-                                navigation.navigate("Login");
-                            } else {
-                                navigation.navigate("Form");
-                            }
-                        }}
-                        style={[styles.button, { backgroundColor: "#e38521" }]}
-                    >
-                        <Text>Se connecter</Text>
-                    </Button>
-                </View> */}
                 </View>
             </View >
         );
